@@ -1,0 +1,7 @@
+server.port: 7002
+spring:
+  redis:
+    host: localhost:6379
+    port: 6379
+    password: root
+    default-time: 5m

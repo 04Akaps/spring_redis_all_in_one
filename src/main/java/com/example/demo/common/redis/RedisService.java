@@ -2,13 +2,19 @@ package com.example.demo.common.redis;
 
 import org.springframework.stereotype.Service;
 
+import com.example.demo.domain.strategy.model.ValueWithTTL;
 import com.google.gson.Gson;
 
 import java.time.*;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.StringRedisConnection;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -302,5 +308,57 @@ public class RedisService {
 
     public boolean getBit(String key, long offset) {
         return template.opsForValue().getBit(key, offset);
+    }
+
+
+    /**
+     * ========================
+     * Redis Value and TTL Retrieval
+     * ========================
+     * This method retrieves the value associated with a given key from Redis 
+     * along with its time-to-live (TTL). It uses Redis pipelining to efficiently 
+     * fetch both the value and the TTL in a single operation.
+     * 
+     * Generic Type:
+     * - T: The type of the object to be deserialized from the JSON stored in Redis.
+     * 
+     * Parameters:
+     * - key: The key whose associated value and TTL are to be retrieved.
+     * - clazz: The Class object of the type T, used for deserialization of the JSON value.
+     * 
+     * Returns:
+     * - A ValueWithTTL<T> object containing the retrieved value and its TTL.
+     *   - value: The deserialized object retrieved from Redis.
+     *   - ttl: The remaining time-to-live of the key in seconds; null if the key does not exist.
+     * 
+     * Exceptions:
+     * - Throws exceptions related to Redis operations and JSON parsing. 
+     *   These should be handled by the calling code.
+     * ========================
+     */
+    public <T> ValueWithTTL<T> GetValueWithTTL(String key, Class<T> clazz) {
+        T value = null;
+        Long ttl = null;
+
+        try {
+            List<Object> results = template.executePipelined((RedisCallback<Object>) connection -> {
+                connection.openPipeline();
+
+                StringRedisConnection conn = (StringRedisConnection) connection;
+
+                conn.get(key); // 값 가져오기
+                conn.pTtl(key); // TTL 가져오기
+
+                connection.closePipeline();
+                return null;
+            });
+
+            value = (T) gson.fromJson((String) results.get(0), clazz); // JSON을 객체로 변환
+            ttl = (Long) results.get(1); // TTL 가져오기
+        } catch (Exception e) {
+            e.printStackTrace(); 
+        }
+
+        return new ValueWithTTL<>(value, ttl);
     }
 }

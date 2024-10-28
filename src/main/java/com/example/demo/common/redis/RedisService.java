@@ -11,6 +11,7 @@ import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -360,5 +361,40 @@ public class RedisService {
         }
 
         return new ValueWithTTL<>(value, ttl);
+    }
+
+
+    /**
+     * ========================
+     * Redis Key Summation and Renewal
+     * ========================
+     * This method executes a Lua script to sum the values of two keys 
+     * and store the result in a specified key atomically.
+     * 
+     * Parameters:
+     * - script: The Lua script containing the sum logic.
+     * - key1: The first key to sum.
+     * - key2: The second key to sum.
+     * - resultKey: The key where the result will be stored.
+     * 
+     * Returns:
+     * - A Long representing the sum of the values from key1 and key2.
+     * ========================
+     */
+    public Long SumTwoKeyAndRenew(String script, String key1, String key2, String resultKey) {
+    
+        return template.execute((RedisCallback<Long>) connection -> {
+
+            byte[] scriptBytes = script.getBytes();
+            byte[] key1Bytes = key1.getBytes();
+            byte[] key2Bytes = key2.getBytes();
+            byte[] resultKeyBytes = resultKey.getBytes();
+   
+            return (Long) connection.execute("EVAL", 
+                    scriptBytes, 
+                    key1Bytes, 
+                    key2Bytes, 
+                    resultKeyBytes);
+        });
     }
 }

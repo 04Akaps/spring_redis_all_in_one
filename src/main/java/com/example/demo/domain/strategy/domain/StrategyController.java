@@ -24,5 +24,5 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/strategy")
 @RequiredArgsConstructor
 public class StrategyController {
-        
+    
 }

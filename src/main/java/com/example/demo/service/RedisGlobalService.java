@@ -13,4 +13,5 @@ public class RedisGlobalService {
     public final RedisList listCollection;
     public final RedisHashes redisHashes;
     public final RedisBitsService redisBits;
+    public final RedisStrategyService redisStrategy;
 }

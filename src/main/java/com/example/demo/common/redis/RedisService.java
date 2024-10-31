@@ -397,4 +397,15 @@ public class RedisService {
                     resultKeyBytes);
         });
     }
+
+
+
+    // String script = "local key1 = KEYS[1]\n" +
+    // "local key2 = KEYS[2]\n" +
+    // "local resultKey = KEYS[3]\n" +
+    // "local value1 = tonumber(redis.call('GET', key1) or 0)\n" +
+    // "local value2 = tonumber(redis.call('GET', key2) or 0)\n" +
+    // "local result = value1 + value2\n" +
+    // "redis.call('SET', resultKey, result)\n" +
+    // "return result";
 }

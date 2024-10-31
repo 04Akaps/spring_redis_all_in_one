@@ -48,4 +48,16 @@ public class StrategyController {
         return service.redisStrategy.PERStrategy(key);
     }
 
+
+    @Operation(
+        summary = "lua script"
+    )
+    @GetMapping("/lua-script")
+    public void LuaScript(
+        @RequestParam @Valid String key1,
+        @RequestParam @Valid String key2,
+        @RequestParam @Valid String newKey
+    ) {
+        service.redisStrategy.LuaScript(key1, key2, newKey);
+    }
 }

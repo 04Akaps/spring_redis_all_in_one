@@ -29,7 +29,7 @@ public class RedisSortedSet {
         redis.removeFromSortedSet(reqeust.baseRequest().Key(), data);
     }
 
-    public Set<SortedSet> GetTopN(String key, Integer n) {
+    public List<SortedSet> GetTopN(String key, Integer n) {
         return redis.getTopNFromSortedSet(key, n, SortedSet.class);
     }
 }

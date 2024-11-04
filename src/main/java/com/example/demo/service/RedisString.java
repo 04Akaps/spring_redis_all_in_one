@@ -18,11 +18,14 @@ public class RedisString {
     private final RedisService redis;
 
     public void Set(SetDataRequest req) {
-        redis.setData(req.baseRequest().Key(), null);
+        String key = req.baseRequest().Key();
+        SetModel newModel = new SetModel(key, req.Name());
+
+        redis.setData(req.baseRequest().Key(), newModel);
     }
 
-    public SetDataResponse Get(SetDataRequest req) {
-        SetModel result = redis.getData(req.baseRequest().Key(), SetModel.class);
+    public SetDataResponse Get(String key) {
+        SetModel result = redis.getData(key, SetModel.class);
 
         List<SetModel> res = new ArrayList<SetModel>();
         res.add(result);

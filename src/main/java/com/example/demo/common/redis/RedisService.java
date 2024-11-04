@@ -28,6 +28,8 @@ public class RedisService {
 
     @Value("${spring.redis.default-time}")
     private Duration defaultExpireTime;
+
+    // private Duration defaultExpireTime = Duration.ofMinutes(5);
     
     private final Gson gson;
 
@@ -161,9 +163,9 @@ public class RedisService {
         return resultSet;
     }
 
-    public <T> Set<T> getTopNFromSortedSet(String key, int n, Class<T> clazz) {
+    public <T> List<T> getTopNFromSortedSet(String key, int n, Class<T> clazz) {
         Set<String> jsonValues = template.opsForZSet().reverseRange(key, 0, n - 1);
-        Set<T> resultSet = new HashSet<>();
+        List<T> resultSet = new ArrayList<T>();
 
         if (jsonValues != null) {
             for (String jsonValue : jsonValues) {

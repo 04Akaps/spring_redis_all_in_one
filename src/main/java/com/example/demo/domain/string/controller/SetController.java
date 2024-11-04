@@ -1,7 +1,9 @@
 package com.example.demo.domain.string.controller;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.domain.string.model.request.MultiSetRequest;
@@ -36,11 +38,11 @@ public class SetController {
     @Operation(
         summary = "단순한 key에 대한 String Get"
     )
-    @PostMapping("/get-string-collection")
+    @GetMapping("/get-string-collection")
     public SetDataResponse GetSetValue(
-        @RequestBody  @Valid SetDataRequest request
+        @RequestParam @Valid String key
     ) {
-        return service.stringCollection.Get(request);
+        return service.stringCollection.Get(key);
     }
 
     @Operation(

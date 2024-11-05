@@ -282,7 +282,7 @@ public class RedisService {
         Object result = template.opsForHash().get(key, field);
 
         if (result != null) {
-            return clazz.cast(result);
+            return gson.fromJson(result.toString(), clazz);
         }
 
         return null;

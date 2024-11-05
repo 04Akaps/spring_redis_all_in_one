@@ -64,7 +64,7 @@ public class SortedSetController {
         summary = "상위 n개를 조회합니다."
     )
     @GetMapping("/get-sorted-set-by-top")
-    public Set<SortedSet> GetTopData(
+    public List<SortedSet> GetTopData(
         @RequestParam @Valid String key,
         @RequestParam @Valid Integer n
     ) {

@@ -9,6 +9,8 @@ import java.time.*;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.ReturnType;
@@ -16,6 +18,10 @@ import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.scripting.ScriptSource;
+import org.springframework.scripting.support.ResourceScriptSource;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -344,25 +350,34 @@ public class RedisService {
         Long ttl = null;
 
         try {
-            List<Object> results = template.executePipelined((RedisCallback<Object>) connection -> {
-                connection.openPipeline();
-
-                StringRedisConnection conn = (StringRedisConnection) connection;
-
-                conn.get(key); // 값 가져오기
-                conn.pTtl(key); // TTL 가져오기
-
-                connection.closePipeline();
-                return null;
+            
+            List<Object> results = template.executePipelined(new RedisCallback<Object>() {
+                public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                    StringRedisConnection conn = (StringRedisConnection)connection;
+               
+                    conn.get(key); // 값 가져오기
+                    conn.ttl(key); // TTL 가져오기
+                    return null;
+                }
             });
+            
+            if (results != null && results.size() >= 2) {
+                // 결과가 있을 때만 처리
+                String valueString = (String) results.get(0);
+                ttl = (Long) results.get(1);
+    
+                // 값이 null이 아니면 JSON으로 변환
+                if (valueString != null) {
+                    value = gson.fromJson(valueString, clazz); // JSON을 객체로 변환
+                }
+            }
 
-            value = (T) gson.fromJson((String) results.get(0), clazz); // JSON을 객체로 변환
-            ttl = (Long) results.get(1); // TTL 가져오기
+            return new ValueWithTTL<>(value, ttl);
         } catch (Exception e) {
             e.printStackTrace(); 
         }
 
-        return new ValueWithTTL<>(value, ttl);
+        return null;
     }
 
 
@@ -383,21 +398,21 @@ public class RedisService {
      * - A Long representing the sum of the values from key1 and key2.
      * ========================
      */
-    public Long SumTwoKeyAndRenew(String script, String key1, String key2, String resultKey) {
-    
-        return template.execute((RedisCallback<Long>) connection -> {
+    public Long SumTwoKeyAndRenew( String key1, String key2, String resultKey) {
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
 
-            byte[] scriptBytes = script.getBytes();
-            byte[] key1Bytes = key1.getBytes();
-            byte[] key2Bytes = key2.getBytes();
-            byte[] resultKeyBytes = resultKey.getBytes();
-   
-            return (Long) connection.execute("EVAL", 
-                    scriptBytes, 
-                    key1Bytes, 
-                    key2Bytes, 
-                    resultKeyBytes);
-        });
+        redisScript.setLocation(new ClassPathResource("/lua/newKey.lua"));
+
+        redisScript.setResultType(Long.class);
+
+        List<String> keys = Arrays.asList(key1, key2, resultKey);
+
+        Long result = template.execute(redisScript,keys);
+
+        return result;
     }
+
+
+    
 
 }
